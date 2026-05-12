@@ -151,6 +151,7 @@ h2 {
 
 /* Markmap page */
 .markmap-wrap {
+  position: relative;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -161,10 +162,35 @@ h2 {
   width: 100%;
   height: 78vh;
   min-height: 540px;
+  overflow: hidden;
 }
-.markmap-stage svg.markmap {
-  width: 100%;
-  height: 100%;
+.markmap-stage > svg {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+.markmap-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 4px;
+  z-index: 2;
+}
+.markmap-controls button {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+  font-family: inherit;
+}
+.markmap-controls button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .markmap-note {
   font-size: 12px;

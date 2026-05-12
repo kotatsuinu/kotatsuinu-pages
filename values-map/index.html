@@ -7,11 +7,6 @@
 <meta name="description" content="こたつ犬の価値観マップ（公開要約版）。リベシティ向けに体系化した自己分析。">
 <meta name="robots" content="noindex">
 <link rel="stylesheet" href="/_assets/styles.css">
-<style>
-  /* Markmap node colors — 個人色のアクセント */
-  .markmap-node > circle { fill: #ffffff; stroke: #3a5b7a; }
-  .markmap-node text { font-family: inherit; }
-</style>
 </head>
 <body>
 
@@ -37,8 +32,27 @@
 
   <div class="markmap-wrap">
     <div class="markmap-stage">
-      <div class="markmap">
-<script type="text/template">
+      <svg id="mm-svg"></svg>
+    </div>
+    <div class="markmap-controls">
+      <button type="button" id="mm-fit" title="全体表示">⤢ Fit</button>
+      <button type="button" id="mm-zoom-in" title="拡大">＋</button>
+      <button type="button" id="mm-zoom-out" title="縮小">－</button>
+    </div>
+  </div>
+
+  <p class="markmap-note">
+    操作: ノードを <code>クリック</code> で折りたたみ／展開、ドラッグで移動、スクロールで拡大縮小。<br>
+    描画ライブラリ: <a href="https://markmap.js.org/" target="_blank" rel="noopener">Markmap</a>（オープンソース）
+  </p>
+
+</main>
+
+<footer class="site-footer">
+  © Kotatsuinu / Hosted under <a href="https://farmeolica.com/" target="_blank" rel="noopener">farmeolica.com</a>
+</footer>
+
+<script type="text/markdown" id="mm-source">
 # こたつ犬 / Farm Eolica 園主
 
 ## 譲れない3つの軸
@@ -91,9 +105,9 @@
 
 ### 仕事の構造
 - 良いものを作る
-- → 自然な他者貢献
-- → 感謝とお金
-- → 自分の成長へ還元
+- 自然な他者貢献
+- 感謝とお金
+- 自分の成長へ還元
 
 ### 嫌悪するもの
 - 良くないものの売り込み
@@ -114,7 +128,7 @@
 - 外向性 45（選択的）
 - 協調性 78
 - 神経症傾向 18（下位2%）
-- ※ 開放性高 × 神経症傾向低 = 全人口の0.1%
+- 開放性高 × 神経症傾向低 = 全人口の0.1%
 
 ### MBTI / エニアグラム
 - MBTI: INTP（論理学者）
@@ -131,7 +145,7 @@
 - 成長実感 70%
 - 貢献可能性 20%
 - 承認可能性 10%
-- ※ 承認ゼロ確定だと-50%
+- 承認ゼロ確定だと-50%
 
 ## 好きなもの
 - 料理（家のディナー担当）
@@ -155,13 +169,13 @@
 
 ### 理想ポジション
 - 相棒・二番手・専門性で支える側
-- 条件付き従属: 理にかなえば従う、納得できなければ従わない
+- 理にかなえば従う、納得できなければ従わない
 
 ## 3つのターニングポイント
 - ① 大学院での挫折
 - ② 大学時代の経験
 - ③ 農業転職
-- ※ 詳細はクローズドな場でのみ
+- 詳細はクローズドな場でのみ
 
 ## 10年後のビジョン
 ### 事業
@@ -192,22 +206,101 @@
 - 「人生は一度きり、主体性をもって、自分の選択に責任をもって楽しんで生きていこう」
 - 「精一杯、辛さも、楽しさも、全力で味わって。それがいつか宝ものになる」
 </script>
-      </div>
-    </div>
-  </div>
 
-  <p class="markmap-note">
-    操作: ノードを <code>クリック</code> で折りたたみ／展開、ドラッグで移動、スクロールで拡大縮小。<br>
-    描画ライブラリ: <a href="https://markmap.js.org/" target="_blank" rel="noopener">Markmap</a>（オープンソース）
-  </p>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/markmap-view@0.18"></script>
+<script>
+(function() {
+  'use strict';
 
-</main>
+  // ---- Minimal markdown → tree parser (headings + bullets only) ----
+  function parseMd(md) {
+    const lines = md.split('\n');
+    const root = { content: '', children: [] };
+    const stack = [{ node: root, depth: -1 }];
 
-<footer class="site-footer">
-  © Kotatsuinu / Hosted under <a href="https://farmeolica.com/" target="_blank" rel="noopener">farmeolica.com</a>
-</footer>
+    for (const raw of lines) {
+      const line = raw.replace(/\s+$/, '');
+      if (!line.trim()) continue;
 
-<script src="https://cdn.jsdelivr.net/npm/markmap-autoloader@0.18"></script>
+      let depth, content;
+      const h = line.match(/^(#+)\s+(.+)$/);
+      const b = line.match(/^(\s*)-\s+(.+)$/);
+
+      if (h) {
+        depth = h[1].length;
+        content = h[2];
+      } else if (b) {
+        const indent = b[1].length;
+        depth = 10 + Math.floor(indent / 2);
+        content = b[2];
+      } else {
+        continue;
+      }
+
+      content = content.replace(/\*\*(.+?)\*\*/g, '$1');
+
+      while (stack.length > 1 && stack[stack.length - 1].depth >= depth) {
+        stack.pop();
+      }
+
+      const node = { content, children: [] };
+      stack[stack.length - 1].node.children.push(node);
+      stack.push({ node, depth });
+    }
+
+    if (root.children.length === 1) return root.children[0];
+    return root;
+  }
+
+  function init() {
+    const md = document.getElementById('mm-source').textContent;
+    const tree = parseMd(md);
+
+    const { Markmap, deriveOptions } = window.markmap;
+    const svg = document.getElementById('mm-svg');
+
+    const options = deriveOptions ? deriveOptions({
+      colorFreezeLevel: 2,
+      initialExpandLevel: 3,
+      duration: 300,
+      maxWidth: 240
+    }) : { duration: 300, maxWidth: 240 };
+
+    const mm = Markmap.create(svg, options, tree);
+
+    function refit() {
+      try { mm.fit(); } catch (e) { /* ignore */ }
+    }
+
+    // 初回フィット（フォント・レイアウト安定後）
+    setTimeout(refit, 120);
+    setTimeout(refit, 500);
+
+    // リサイズ追従
+    window.addEventListener('resize', refit);
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(refit);
+      ro.observe(svg.parentElement);
+    }
+
+    // コントロール
+    document.getElementById('mm-fit').addEventListener('click', refit);
+    document.getElementById('mm-zoom-in').addEventListener('click', () => {
+      try { mm.rescale(1.25); } catch (e) {}
+    });
+    document.getElementById('mm-zoom-out').addEventListener('click', () => {
+      try { mm.rescale(0.8); } catch (e) {}
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
 
 </body>
 </html>
