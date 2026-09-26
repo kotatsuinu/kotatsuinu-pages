@@ -76,6 +76,12 @@ main {
   border-bottom: 1px solid var(--line);
   margin-bottom: 40px;
 }
+.hero-icon {
+  display: block;
+  width: 128px;
+  height: 128px;
+  margin: 0 0 20px;
+}
 .hero h1 {
   font-size: 28px;
   margin: 0 0 12px;
