@@ -15,6 +15,8 @@
 |---|---|---|
 | `/` | ハブ（コンテンツ一覧） | 2026-05-11 |
 | `/values-map/` | 価値観マップ（リベシティ向け公開要約版） | 2026-05-11 |
+| `/temoco/` | temoco サポートページ（`/temoco/en/` 英語版） | 2026-09-27 |
+| `/temoco/privacy/` | temoco プライバシーポリシー（`/temoco/en/privacy/` 英語版） | 2026-09-27 |
 
 ## 構成
 
@@ -23,6 +25,10 @@ kotatsuinu-pages/
 ├── index.html          ← ハブページ
 ├── values-map/
 │   └── index.html      ← 価値観マップ（Markmap描画）
+├── temoco/             ← temoco（音声メモアプリ）のサポート・ポリシー
+│   ├── index.html      ← サポート（日本語）
+│   ├── privacy/index.html
+│   └── en/             ← 英語版（index.html / privacy/index.html）
 ├── _assets/
 │   └── styles.css      ← 共通スタイル
 ├── README.md
